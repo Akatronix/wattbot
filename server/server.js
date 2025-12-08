@@ -4,7 +4,7 @@ require("dotenv").config();
 const SocketRoutes = require("./src/routes/socket.route");
 const authRoutes = require("./src/routes/auth/auth.route");
 const userRoutes = require("./src/routes/auth/user.route");
-const connectDB = require("./src/connection/DBconnection");
+const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,8 +23,14 @@ app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
 
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("connected to database");
+    app.listen(PORT, () => {
+      console.log(`server started on port: ${PORT}`);
+    });
+  })
+  .catch(() => {
+    console.log("error connecting to database");
   });
-});
