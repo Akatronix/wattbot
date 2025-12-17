@@ -1,6 +1,18 @@
 const Socket = require("../models/Socket.model");
 const mongoose = require("mongoose");
 
+
+const toNumber = (value) => {
+  if (typeof value === "string") {
+    const num = Number(value);
+    return isNaN(num) ? value : num;
+  }
+  return value;
+};
+
+
+
+
 async function createSocket(req, res) {
   try {
     const { name, location, type } = req.body;
@@ -28,40 +40,48 @@ async function createSocket(req, res) {
   }
 }
 
+// async function getSockets(req, res) {
+//   try {
+//     const sockets = await Socket.find({ userID: req.user.id }).select(
+//       "-userID"
+//     );
+//     res.status(200).json({ success: true, data: sockets });
+//   } catch (error) {
+//     console.error("Error fetching sockets:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// }
+
+
 async function getSockets(req, res) {
   try {
-    const sockets = await Socket.find({ userID: req.user.id }).select(
-      "-userID"
-    );
-    res.status(200).json({ success: true, data: sockets });
+    const sockets = await Socket.find({ userID: req.user.id })
+      .select("-userID")
+      .lean(); // IMPORTANT: get plain JS objects
+
+    const formattedSockets = sockets.map(socket => ({
+      ...socket,
+      voltage: toNumber(socket.voltage),
+      current: toNumber(socket.current),
+      power:   toNumber(socket.power),
+      energy:  toNumber(socket.energy),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: formattedSockets
+    });
+
   } catch (error) {
     console.error("Error fetching sockets:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-}
-async function updateSocket(req, res) {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-    const updatedSocket = await Socket.findOneAndUpdate(
-      { _id: id, userID: req.user.id },
-      updates,
-      { new: true, runValidators: true }
-    );
-    if (!updatedSocket) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Socket not found" });
-    }
-    res.status(200).json({
-      success: true,
-      message: "Socket updated successfully",
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
     });
-  } catch (error) {
-    console.error("Error updating socket:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
   }
 }
+
+
 
 async function deleteSocket(req, res) {
   console.log("first");
@@ -102,30 +122,6 @@ async function deleteSocket(req, res) {
   }
 }
 
-// hardware update function can be added here
-// async function updateSocketHardware(req, res) {
-//   try {
-//     const { id } = req.params;
-//     const updates = req.body;
-//     const updatedSocket = await Socket.findByIdAndUpdate(id, updates, {
-//       new: true,
-//       runValidators: true,
-//     });
-//     if (!updatedSocket) {
-//       return res
-//         .status(404)
-//         .json({ success: false, message: "Socket not found" });
-//     }
-//     res.status(200).json({
-//       success: true,
-//       message: "Socket updated successfully",
-//       data: updatedSocket,
-//     });
-//   } catch (error) {
-//     console.error("Error updating socket:", error);
-//     res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// }
 
 async function updateSocketHardware(req, res) {
   try {
