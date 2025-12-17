@@ -53,6 +53,31 @@ async function createSocket(req, res) {
 // }
 
 
+async function updateSocket(req, res) {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const updatedSocket = await Socket.findOneAndUpdate(
+      { _id: id, userID: req.user.id },
+      updates,
+      { new: true, runValidators: true }
+    );
+    if (!updatedSocket) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Socket not found" });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Socket updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating socket:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+}
+
+
 async function getSockets(req, res) {
   try {
     const sockets = await Socket.find({ userID: req.user.id })
