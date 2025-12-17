@@ -127,7 +127,7 @@ async function deleteSocket(req, res) {
 //   }
 // }
 
-async function updateSocket(req, res) {
+async function updateSocketHardware(req, res) {
   try {
     const { id } = req.params;
     const userId = req.user.id;
