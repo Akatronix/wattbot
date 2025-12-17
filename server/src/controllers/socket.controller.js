@@ -130,10 +130,19 @@ async function deleteSocket(req, res) {
 async function updateSocketHardware(req, res) {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
 
-    // Destructure only allowed fields
-    const { voltage, current, power, energy } = req.body;
+    // Destructure from request body
+    const { userId, voltage, current, power, energy } = req.body;
+
+    // -----------------------------
+    // Basic userId validation
+    // -----------------------------
+    if (!userId || typeof userId !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required and must be a string"
+      });
+    }
 
     // -----------------------------
     // Validation helpers
@@ -148,9 +157,7 @@ async function updateSocketHardware(req, res) {
       }
 
       if (!DECIMAL_STRING_REGEX.test(value)) {
-        throw new Error(
-          `${fieldName} must be a valid decimal string`
-        );
+        throw new Error(`${fieldName} must be a valid decimal string`);
       }
 
       return value;
@@ -210,6 +217,7 @@ async function updateSocketHardware(req, res) {
     });
   }
 }
+
 
 
 
