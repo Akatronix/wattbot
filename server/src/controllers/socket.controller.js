@@ -103,29 +103,116 @@ async function deleteSocket(req, res) {
 }
 
 // hardware update function can be added here
-async function updateSocketHardware(req, res) {
+// async function updateSocketHardware(req, res) {
+//   try {
+//     const { id } = req.params;
+//     const updates = req.body;
+//     const updatedSocket = await Socket.findByIdAndUpdate(id, updates, {
+//       new: true,
+//       runValidators: true,
+//     });
+//     if (!updatedSocket) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "Socket not found" });
+//     }
+//     res.status(200).json({
+//       success: true,
+//       message: "Socket updated successfully",
+//       data: updatedSocket,
+//     });
+//   } catch (error) {
+//     console.error("Error updating socket:", error);
+//     res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// }
+
+async function updateSocket(req, res) {
   try {
     const { id } = req.params;
-    const updates = req.body;
-    const updatedSocket = await Socket.findByIdAndUpdate(id, updates, {
-      new: true,
-      runValidators: true,
-    });
-    if (!updatedSocket) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Socket not found" });
+    const userId = req.user.id;
+
+    // Destructure only allowed fields
+    const { voltage, current, power, energy } = req.body;
+
+    // -----------------------------
+    // Validation helpers
+    // -----------------------------
+    const DECIMAL_STRING_REGEX = /^\d+(\.\d+)?$/;
+
+    const validateDecimalString = (value, fieldName) => {
+      if (value === undefined) return null;
+
+      if (typeof value !== "string") {
+        throw new Error(`${fieldName} must be a string`);
+      }
+
+      if (!DECIMAL_STRING_REGEX.test(value)) {
+        throw new Error(
+          `${fieldName} must be a valid decimal string`
+        );
+      }
+
+      return value;
+    };
+
+    // -----------------------------
+    // Build update object
+    // -----------------------------
+    const updates = {};
+
+    updates.voltage = validateDecimalString(voltage, "Voltage");
+    updates.current = validateDecimalString(current, "Current");
+    updates.power   = validateDecimalString(power, "Power");
+    updates.energy  = validateDecimalString(energy, "Energy");
+
+    // Remove undefined fields
+    Object.keys(updates).forEach(
+      key => updates[key] === null && delete updates[key]
+    );
+
+    // Reject empty update
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update"
+      });
     }
-    res.status(200).json({
+
+    // -----------------------------
+    // Update socket
+    // -----------------------------
+    const updatedSocket = await Socket.findOneAndUpdate(
+      { _id: id, userID: userId },
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedSocket) {
+      return res.status(404).json({
+        success: false,
+        message: "Socket not found"
+      });
+    }
+
+    return res.status(200).json({
       success: true,
       message: "Socket updated successfully",
-      data: updatedSocket,
+      data: updatedSocket
     });
+
   } catch (error) {
-    console.error("Error updating socket:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Error updating socket:", error.message);
+
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
   }
 }
+
+
+
 module.exports = {
   createSocket,
   getSockets,
