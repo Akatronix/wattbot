@@ -1,4 +1,3 @@
-// src/hooks/useChat.js
 import { useChatStore } from "@/store/chatStore"; // Adjust path if needed
 
 export const useChat = () => {
