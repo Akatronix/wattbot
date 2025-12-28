@@ -118,10 +118,6 @@
 
 
 
-
-
-
-
 import { useState, useRef, useEffect } from "react";
 import {
   Card,
@@ -238,20 +234,6 @@ export default function ChatWithAi({ user, devices }) {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
