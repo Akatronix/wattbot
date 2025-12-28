@@ -35,7 +35,7 @@ export default function DashboardPage() {
     { id: "settings", name: "Settings", icon: Settings },
   ];
 
-  const { user, fetchUserData } = useUserStore();
+  const { user, fetchUserData, userData } = useUserStore();
 
   const navigate = useNavigate();
 
@@ -170,8 +170,11 @@ export default function DashboardPage() {
           {/* Monitor Energy Tab */}
           {activeTab === "monitor" && <MonitorEnergy />}
 
-          {/* Chat with AI Tab */}
-          {activeTab === "chat-ai" && <ChatWithAi />}
+          
+           {/* Chat with AI Tab */}
+          {activeTab === "chat-ai" && (
+            <ChatWithAi user={user} devices={userData} />
+          )}
 
           {/* Create New Socket Tab */}
           {activeTab === "create-socket" && <CreateSocket />}
