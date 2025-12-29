@@ -259,7 +259,7 @@ const ControlDevices = () => {
                         setError={setError}
                       />
                     </div>
-                    <div className="w-full flex items-start justify-end gap-4 mt-6">
+                    <div className="w-full flex items-start justify-end gap-4 mt-6 mx-6">
                       <div>
                         <p className="text-sm text-gray-500">
                           Volatge: {device.voltage} V
