@@ -243,6 +243,24 @@ const ControlDevices = () => {
                       />
                     </button>
                   </div>
+                  <div className="w-full flex items-start justify-start gap-4  mb-4">
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        Volatge: {device.voltage} V
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Current: {device.current} A
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        Power: {formatPower(device.power)}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Energy: {device.energy} kWh
+                      </p>
+                    </div>
+                  </div>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center justify-start gap-2 flex-nowrap">
                       <span
@@ -259,24 +277,6 @@ const ControlDevices = () => {
                         setLoading={setLoading}
                         setError={setError}
                       />
-                    </div>
-                  </div>
-                  <div className="w-full flex items-start justify-start gap-4  mt-6">
-                    <div>
-                      <p className="text-sm text-gray-500">
-                        Volatge: {device.voltage} V
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Current: {device.current} A
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">
-                        Power: {formatPower(device.power)}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Energy: {device.energy} kWh
-                      </p>
                     </div>
                   </div>
                 </div>
