@@ -53,6 +53,55 @@ async function createSocket(req, res) {
 // }
 
 
+async function updateSocketInfo(req, res) {
+  try {
+    const { id, name, location, type } = req.body;
+
+    // 1. Validate Input
+    if (!id || !name || !location || !type) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields (id, name, location, type) are required.",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid socket ID format." });
+    }
+
+    const fieldsToUpdate = { name, location, type };
+    const updatedSocket = await Socket.findByIdAndUpdate(
+      id,
+      { $set: fieldsToUpdate }, // <-- USE $set HERE
+      { new: true, runValidators: true } // `new: true` returns the updated document
+    );
+
+    // 4. Handle "Not Found" Case
+    if (!updatedSocket) {
+      return res
+        .status(404) // Use 404 Not Found for a missing resource
+        .json({
+          success: false,
+          message: "Socket not found with the given ID.",
+        });
+    }
+
+    // 5. Send Success Response
+    res.status(200).json({
+      success: true,
+      message: "Socket fields updated successfully.",
+      socket: updatedSocket,
+    });
+  } catch (error) {
+    console.error("Error updating socket info:", error);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
+}
+
+
+
 async function updateSocket(req, res) {
   try {
     const { id } = req.params;
@@ -248,4 +297,5 @@ module.exports = {
   updateSocket,
   deleteSocket,
   updateSocketHardware,
+  updateSocketInfo
 };
