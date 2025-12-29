@@ -268,14 +268,15 @@ const ControlDevices = () => {
                         <p className="text-sm text-gray-500">
                           Current: {device.current} A
                         </p>
-                      </div>
-                      <div>
                         <p className="text-sm text-gray-500">
                           Power: {formatPower(device.power)}
                         </p>
                         <p className="text-sm text-gray-500">
                           Energy: {device.energy} kWh
                         </p>
+                      </div>
+                      <div>
+                        
                       </div>
                     </div>
                   </div>
