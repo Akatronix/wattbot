@@ -217,7 +217,8 @@ const ControlDevices = () => {
                       </div>
                       <div>
                         <h3 className="font-medium">{device.name}</h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 flex gap-0.5 items-start justify-start">
+                          in the
                           {device.location}
                         </p>
                         <p className="text-sm text-gray-500">
