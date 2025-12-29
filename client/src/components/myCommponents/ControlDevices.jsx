@@ -259,9 +259,24 @@ const ControlDevices = () => {
                         setError={setError}
                       />
                     </div>
-                    <span className="text-sm font-medium">
-                      {formatPower(device.power)}
-                    </span>
+                    <div className="w-full flex items-start justify-end gap-4 mt-6">
+                      <div>
+                        <p className="text-sm text-gray-500">
+                          Volatge: {device.voltage} V
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Current: {device.current} A
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">
+                          Power: {formatPower(device.power)}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Energy: {device.energy} kWh
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
