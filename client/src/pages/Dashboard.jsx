@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   CirclePower,
+  Repeat
 } from "lucide-react";
 import DashboardContent from "@/components/myCommponents/DashboardContent";
 import ChatWithAi from "@/components/myCommponents/ChatWithAi";
@@ -21,6 +22,7 @@ import ControlDevices from "@/components/myCommponents/ControlDevices";
 import useUserStore from "@/store/UserStore";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import UpdateSocketInfo from "@/components/myCommponents/updateSocketInfo";
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -31,6 +33,7 @@ export default function DashboardPage() {
     { id: "control", name: "Control Devices", icon: CirclePower },
     { id: "monitor", name: "Monitor Energy", icon: Zap },
     { id: "create-socket", name: "Create New Socket", icon: Plus },
+    { id: "update-socket", name: "update Socket", icon: Repeat },
     { id: "chat-ai", name: "Chat with AI", icon: MessageSquare },
     { id: "settings", name: "Settings", icon: Settings },
   ];
@@ -166,6 +169,10 @@ export default function DashboardPage() {
 
           {/* Control Devices Tab */}
           {activeTab === "control" && <ControlDevices />}
+
+           {/* update Devices Tab */}
+          {activeTab === "update-socket" && <UpdateSocketInfo />}
+
 
           {/* Monitor Energy Tab */}
           {activeTab === "monitor" && <MonitorEnergy />}
