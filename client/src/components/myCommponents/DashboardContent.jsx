@@ -436,15 +436,7 @@
 //     </div>
 //   );
 // };
-
-
-
-
-
-
-
-
-
+// export default DashboardContent;
 
 
 
@@ -554,7 +546,7 @@ const DashboardContent = () => {
       .map(([type, power]) => ({
         type,
         power,
-        percentage: Math.round((power / totalPower) * 100),
+        percentage: totalPower > 0 ? Math.round((power / totalPower) * 100) : 0,
       }))
       .sort((a, b) => b.power - a.power);
 
@@ -572,7 +564,7 @@ const DashboardContent = () => {
       .map(([location, power]) => ({
         location,
         power,
-        percentage: Math.round((power / totalPower) * 100),
+        percentage: totalPower > 0 ? Math.round((power / totalPower) * 100) : 0,
       }))
       .sort((a, b) => b.power - a.power);
 
@@ -674,6 +666,16 @@ const DashboardContent = () => {
     );
   }
 
+  // Safely get top device type percentage
+  const topDeviceTypePercentage = deviceUsageData.deviceTypeDistribution.length > 0 
+    ? deviceUsageData.deviceTypeDistribution[0].percentage 
+    : 0;
+
+  // Safely get top location percentage
+  const topLocationPercentage = deviceUsageData.locationDistribution.length > 0 
+    ? deviceUsageData.locationDistribution[0].percentage 
+    : 0;
+
   return (
     <div>
       <div className="space-y-6">
@@ -713,9 +715,7 @@ const DashboardContent = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {deviceUsageData.deviceTypeDistribution.length > 0
-                  ? `${deviceUsageData.deviceTypeDistribution[0].percentage}%`
-                  : "0%"}
+                {formatNumber(topDeviceTypePercentage)}%
               </div>
               <p className="text-xs text-muted-foreground">
                 {deviceUsageData.deviceTypeDistribution.length > 0
@@ -736,9 +736,7 @@ const DashboardContent = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {deviceUsageData.locationDistribution.length > 0
-                  ? `${deviceUsageData.locationDistribution[0].percentage}%`
-                  : "0%"}
+                {formatNumber(topLocationPercentage)}%
               </div>
               <p className="text-xs text-muted-foreground">
                 {deviceUsageData.locationDistribution.length > 0
@@ -832,7 +830,7 @@ const DashboardContent = () => {
                             <span className="font-medium">
                               {getDeviceTypeName(item.type)}:
                             </span>{" "}
-                            {item.percentage}% ({formatNumber(item.power)}KW)
+                            {formatNumber(item.percentage)}% ({formatNumber(item.power)}KW)
                           </div>
                         </div>
                       )
@@ -912,29 +910,3 @@ const DashboardContent = () => {
 };
 
 export default DashboardContent;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// export default DashboardContent;
