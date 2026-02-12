@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import setMaxPowerForm from "./setMaxPowerForm"
 import {
   Card,
   CardContent,
@@ -209,6 +210,7 @@ const UpdateSocketInfo = ({ initialData }) => {
           </CardContent>
         </Card>
       </div>
+      <setMaxPowerForm/>
     </div>
   );
 };
