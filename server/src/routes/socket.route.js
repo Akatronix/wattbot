@@ -5,7 +5,8 @@ const {
   updateSocket,
   deleteSocket,
   updateSocketHardware,
-  updateSocketInfo
+  updateSocketInfo,
+  setMaxPower
 } = require("../controllers/socket.controller");
 const verifyToken = require("../middlewares/VerifyToken");
 const verifyUser = require("../middlewares/VerifyUser");
@@ -18,6 +19,7 @@ router.post("/create", verifyToken, verifyUser, createSocket);
 router.get("/getData", verifyToken, verifyUser, getSockets);
 router.put("/:id", verifyToken, verifyUser, updateSocket);
 router.post("/updateData", verifyToken, verifyUser, updateSocketInfo);
+router.post("setPower", verifyToken, verifyUser,setMaxPower);
 router.put("/hardware/:id", updateSocketHardware);
 router.delete("/:id", verifyToken, verifyUser, deleteSocket);
 
