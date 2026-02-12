@@ -55,7 +55,8 @@ const SetMaxPowerForm = () => {
   // State for form inputs
   const [socketId, setSocketId] = useState('6936b1004cdfcc09e6933449');
   const [maxPower, setMaxPower] = useState('');
-  const [authToken, setAuthToken] = useState(''); // User should paste their token here
+  // --- CHANGE: Removed authToken state as it will be fetched from localStorage ---
+  // const [authToken, setAuthToken] = useState('');
 
   // State for UI feedback
   const [isLoading, setIsLoading] = useState(false);
@@ -67,9 +68,20 @@ const SetMaxPowerForm = () => {
     setIsLoading(true);
     setMessage(''); // Clear previous messages
 
+    // --- CHANGE: Get token directly from localStorage ---
+    const token = localStorage.getItem("token");
+
     // Basic validation
-    if (!socketId || !maxPower || !authToken) {
+    if (!socketId || !maxPower) {
       setMessage('Please fill in all fields.');
+      setMessageType('error');
+      setIsLoading(false);
+      return;
+    }
+    
+    // --- CHANGE: Added validation for the token ---
+    if (!token) {
+      setMessage('Authorization token not found. Please log in again.');
       setMessageType('error');
       setIsLoading(false);
       return;
@@ -79,10 +91,12 @@ const SetMaxPowerForm = () => {
 
     try {
       const response = await fetch(apiUrl, {
-        method: 'PATCH', // Or 'PUT' depending on your API design
+        // --- CHANGE: Method updated to PUT ---
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`, // Include the Bearer token
+          // --- CHANGE: Header updated to match your API's expectation ---
+          token: token,
         },
         body: JSON.stringify({
           maxPower: Number(maxPower), // Ensure maxPower is a number
@@ -141,10 +155,11 @@ const SetMaxPowerForm = () => {
           />
         </div>
 
-        <div style={styles.formGroup}>
+        {/* --- CHANGE: The token input field has been removed --- */}
+        {/* <div style={styles.formGroup}>
           <label htmlFor="authToken" style={styles.label}>Authorization Token:</label>
           <input
-            type="password" // Use password type to obscure the token
+            type="password"
             id="authToken"
             value={authToken}
             onChange={(e) => setAuthToken(e.target.value)}
@@ -152,7 +167,7 @@ const SetMaxPowerForm = () => {
             style={styles.input}
             required
           />
-        </div>
+        </div> */}
 
         <button
           type="submit"
