@@ -392,43 +392,11 @@ import {
   Lightbulb,
   Droplets,
   Wifi,
-  AlertTriangle, // Added for warning icon
+  AlertTriangle, // Added for the warning icon
 } from "lucide-react";
 import useUserStore from "@/store/UserStore";
 import { useSocketStore } from "@/store/socketStore";
 import DeleteSockect from "./DeleteSockect";
-
-// --- New Power Status Indicator Component ---
-const PowerBadge = ({ current, limit }) => {
-  if (!limit || limit <= 0) return null;
-
-  const percentage = (current / limit) * 100;
-  
-  // Over Limit
-  if (current >= limit) {
-    return (
-      <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white animate-pulse">
-        <AlertTriangle className="h-3 w-3" /> OVER LIMIT
-      </span>
-    );
-  }
-
-  // Warning (90% of limit)
-  if (percentage >= 90) {
-    return (
-      <span className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-400 text-black">
-        <AlertTriangle className="h-3 w-3" /> WARNING
-      </span>
-    );
-  }
-
-  // Safe
-  return (
-    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700">
-      SAFE
-    </span>
-  );
-};
 
 const ControlDevices = () => {
   const { userData } = useUserStore();
@@ -442,40 +410,81 @@ const ControlDevices = () => {
 
   const getDeviceIcon = (type) => {
     switch (type) {
-      case "ac": return Snowflake;
-      case "heater": return Thermometer;
-      case "lighting": return Lightbulb;
-      case "geyser": return Droplets;
-      default: return Wifi;
+      case "ac":
+        return Snowflake;
+      case "heater":
+        return Thermometer;
+      case "lighting":
+        return Lightbulb;
+      case "geyser":
+        return Droplets;
+      default:
+        return Wifi;
     }
   };
 
-  const formatPower = (power) => `${power} W`; // Assuming Watts based on previous conversation
+  // --- NEW: Power Badge Logic ---
+  const getPowerBadge = (currentPower, maxPower) => {
+    if (!maxPower || maxPower === 0) return null;
+
+    const isExceeded = currentPower >= maxPower;
+    const isWarning = currentPower >= maxPower * 0.9; // Warning at 90% capacity
+
+    if (isExceeded) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 animate-pulse border border-red-200">
+          <AlertTriangle className="h-3 w-3" /> OVER LIMIT
+        </span>
+      );
+    }
+
+    if (isWarning) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+          <AlertTriangle className="h-3 w-3" /> WARNING
+        </span>
+      );
+    }
+
+    return null;
+  };
+
+  const formatPower = (power) => {
+    return `${power} KW`;
+  };
 
   const locations = [...new Set(userData.map((device) => device.location))];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Control Devices</h1>
-        <p className="text-gray-600">Turn your smart devices on or off remotely</p>
-        {loading && <p className="text-blue-600">Loading...</p>}
-        {error && <p className="text-red-600">Error: {error}</p>}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Control Devices</h1>
+          <p className="text-gray-600">
+            Turn your smart devices on or off remotely
+          </p>
+        </div>
+        <div>
+          {loading && <p className="text-blue-600">Loading...</p>}
+          {error && <p className="text-red-600">Error: {error}</p>}
+        </div>
       </div>
 
       <div className="space-y-6">
         {locations.map((room) => {
-          const roomDevices = userData.filter((device) => device.location === room);
+          const roomDevices = userData.filter(
+            (device) => device.location === room
+          );
+
           return (
             <Card key={room}>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="mr-2">{room}</span>
-                    <span className="text-sm font-normal text-gray-500">
-                      ({roomDevices.filter((d) => d.switchStatus).length} of {roomDevices.length} active)
-                    </span>
-                  </div>
+                <CardTitle className="flex items-center">
+                  <span className="mr-2">{room}</span>
+                  <span className="text-sm font-normal text-gray-500">
+                    ({roomDevices.filter((d) => d.switchStatus).length} of{" "}
+                    {roomDevices.length} active)
+                  </span>
                 </CardTitle>
                 <CardDescription>Devices in {room}</CardDescription>
               </CardHeader>
@@ -484,37 +493,83 @@ const ControlDevices = () => {
                   {roomDevices.map((device) => {
                     const IconComponent = getDeviceIcon(device.type);
                     return (
-                      <div key={device._id} className={`border rounded-lg p-4 transition-all ${device.power >= device.setPower && device.switchStatus ? 'border-red-500 bg-red-50' : 'hover:shadow-md'}`}>
+                      <div
+                        key={device._id}
+                        className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center">
-                            <div className={`p-2 rounded-lg mr-3 ${device.switchStatus ? "bg-blue-100" : "bg-gray-100"}`}>
-                              <IconComponent className={`h-5 w-5 ${device.switchStatus ? "text-blue-600" : "text-gray-500"}`} />
+                            <div
+                              className={`p-2 rounded-lg mr-3 ${
+                                device.switchStatus
+                                  ? "bg-blue-100"
+                                  : "bg-gray-100"
+                              }`}
+                            >
+                              <IconComponent
+                                className={`h-5 w-5 ${
+                                  device.switchStatus
+                                    ? "text-blue-600"
+                                    : "text-gray-500"
+                                }`}
+                              />
                             </div>
                             <div>
+                              <h3 className="font-medium">{device.name}</h3>
                               <div className="flex items-center gap-2">
-                                <h3 className="font-medium">{device.name}</h3>
-                                {/* Badge Integrated Here */}
-                                {device.switchStatus && (
-                                  <PowerBadge current={device.power} limit={device.setPower} />
-                                )}
+                                <p className="text-sm text-gray-500">
+                                  {formatPower(device.power)}
+                                </p>
+                                {/* Badge added here */}
+                                {getPowerBadge(device.power, device.maxPower)}
                               </div>
-                              <p className="text-sm text-gray-500">{formatPower(device.power)} / {device.setPower || 0}W</p>
+                              <p className="text-sm text-gray-500">
+                                ID: {device._id}
+                              </p>
                             </div>
                           </div>
                           <button
-                            onClick={() => toggleDeviceStatus(device._id, device.switchStatus)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${device.switchStatus ? "bg-blue-600" : "bg-gray-300"}`}
+                            onClick={() =>
+                              toggleDeviceStatus(
+                                device._id,
+                                device.switchStatus
+                              )
+                            }
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              device.switchStatus
+                                ? "bg-blue-600"
+                                : "bg-gray-300"
+                            }`}
                           >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${device.switchStatus ? "translate-x-6" : "translate-x-1"}`} />
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                device.switchStatus
+                                  ? "translate-x-6"
+                                  : "translate-x-1"
+                              }`}
+                            />
                           </button>
                         </div>
                         <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs px-2 py-1 rounded-full ${device.switchStatus ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                          <div className="flex items-center justify-start gap-2 flex-nowrap">
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full ${
+                                device.switchStatus
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
                               {device.switchStatus ? "ON" : "OFF"}
                             </span>
-                            <DeleteSockect socket={device._id} setLoading={setLoading} setError={setError} />
+                            <DeleteSockect
+                              socket={device._id}
+                              setLoading={setLoading}
+                              setError={setError}
+                            />
                           </div>
+                          <span className="text-xs text-gray-500">
+                            {device.switchStatus ? "Active" : "Inactive"}
+                          </span>
                         </div>
                       </div>
                     );
@@ -526,32 +581,196 @@ const ControlDevices = () => {
         })}
       </div>
 
-      {/* Simplified All Devices Grid for brevity - Applying same logic */}
       <Card>
         <CardHeader>
-          <CardTitle>Detailed Status</CardTitle>
+          <CardTitle>All Devices</CardTitle>
+          <CardDescription>
+            Control all your smart devices from one place
+            {!userData.length && (
+              <p className="text-gray-500 mt-4 w-full text-center">
+                No devices found.
+              </p>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userData.map((device) => (
-              <div key={device._id} className="border rounded-lg p-4">
-                <div className="flex justify-between mb-2">
-                  <h3 className="font-bold">{device.name}</h3>
-                  <PowerBadge current={device.power} limit={device.setPower} />
+            {userData.map((device) => {
+              const IconComponent = getDeviceIcon(device.type);
+              return (
+                <div
+                  key={device._id}
+                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <div
+                        className={`p-2 rounded-lg mr-3 ${
+                          device.switchStatus ? "bg-blue-100" : "bg-gray-100"
+                        }`}
+                      >
+                        <IconComponent
+                          className={`h-5 w-5 ${
+                            device.switchStatus
+                              ? "text-blue-600"
+                              : "text-gray-500"
+                          }`}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{device.name}</h3>
+                        <p className="text-sm text-gray-500 flex gap-0.5 items-start justify-start">
+                          Location: {device.location}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          ID: {device._id}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        toggleDeviceStatus(device._id, device.switchStatus);
+                      }}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        device.switchStatus ? "bg-blue-600" : "bg-gray-300"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          device.switchStatus
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="w-full flex items-start justify-start gap-4  mb-4">
+                    <div>
+                      <p className="text-sm text-gray-500">
+                        Volatge: {device.voltage} V
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Current: {device.current} A
+                      </p>
+                    </div>
+                    <div>
+                      <div className="flex flex-col">
+                        <p className="text-sm text-gray-500">
+                          Power: {formatPower(device.power)}
+                        </p>
+                        {/* Badge added here for detailed view */}
+                        <div className="mt-1">
+                          {getPowerBadge(device.power, device.maxPower)}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Energy: {device.energy} kWh
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-start gap-2 flex-nowrap">
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          device.switchStatus
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {device.switchStatus ? "ON" : "OFF"}
+                      </span>
+                      <DeleteSockect
+                        socket={device._id}
+                        setLoading={setLoading}
+                        setError={setError}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-sm text-gray-500">
-                  <p>Power: <span className={device.power >= device.setPower ? "text-red-600 font-bold" : ""}>{device.power}W</span></p>
-                  <p>Limit: {device.setPower}W</p>
-                  <p>Current: {device.current}A</p>
-                  <p>Voltage: {device.voltage}V</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
-      
-      {/* Quick Actions remain unchanged */}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Control multiple devices at once</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center h-20"
+              onClick={() => {
+                userData.forEach((device) => {
+                  if (!device.switchStatus) {
+                    updateDeviceStatus({
+                      id: device._id,
+                      status: !device.switchStatus,
+                    });
+                  }
+                });
+              }}
+            >
+              <Power className="h-6 w-6 mb-1" />
+              <span>Turn All On</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center h-20"
+              onClick={() => {
+                userData.forEach((device) => {
+                  if (device.switchStatus) {
+                    updateDeviceStatus({
+                      id: device._id,
+                      status: !device.switchStatus,
+                    });
+                  }
+                });
+              }}
+            >
+              <Power className="h-6 w-6 mb-1" />
+              <span>Turn All Off</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center h-20"
+              onClick={() => {
+                userData.forEach((device, index) => {
+                  if (device.type === "lighting" && !device.switchStatus) {
+                    updateDeviceStatus({
+                      id: device._id,
+                      status: !device.switchStatus,
+                    });
+                  }
+                });
+              }}
+            >
+              <Lightbulb className="h-6 w-6 mb-1" />
+              <span>Lights On</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center justify-center h-20"
+              onClick={() => {
+                userData.forEach((device) => {
+                  if (device.type === "lighting" && device.switchStatus) {
+                    updateDeviceStatus({
+                      id: device._id,
+                      status: !device.switchStatus,
+                    });
+                  }
+                });
+              }}
+            >
+              <Lightbulb className="h-6 w-6 mb-1" />
+              <span>Lights Off</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
