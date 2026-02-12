@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import setMaxPowerForm from "./setMaxPowerForm"
 import {
   Card,
   CardContent,
@@ -10,13 +9,9 @@ import {
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 
-// --- Local API Request Helper ---
-// This function makes the PUT request directly to your backend.
+// --- Local API Request Helper for Updating Socket Info ---
 const updateSocketData = async (id, dataToUpdate) => {
-  // IMPORTANT: Replace with your actual API endpoint URL
   const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/sockets/updateData`;
-
-  console.log({ id, ...dataToUpdate });
 
   const response = await fetch(API_URL, {
     method: "POST",
@@ -32,12 +27,122 @@ const updateSocketData = async (id, dataToUpdate) => {
     throw new Error(errorData.message || "Failed to update socket");
   }
 
-  return response.json(); // Return the JSON response from the server
+  return response.json();
 };
 
-// --- The React Component ---
+// --- Local API Request Helper for Setting Max Power ---
+const setMaxPower = async (id, maxPowerValue) => {
+  // IMPORTANT: Use the specific endpoint for setting max power
+  const API_URL = `https://wattbot-server.vercel.app/api/sockets/setPower/${id}`;
+
+  const response = await fetch(API_URL, {
+    method: "PATCH", // Use PATCH as specified for this endpoint
+    headers: {
+      "Content-Type": "application/json",
+      token: localStorage.getItem("token"), // Use the same header format
+    },
+    body: JSON.stringify({ maxPower: Number(maxPowerValue) }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Failed to set max power");
+  }
+
+  return response.json();
+};
+
+
+// --- The New SetMaxPowerForm Component ---
+// This is a self-contained component for the new functionality.
+const SetMaxPowerForm = () => {
+  const [socketId, setSocketId] = useState("");
+  const [maxPower, setMaxPower] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleMaxPowerSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (!socketId || !maxPower || isNaN(maxPower) || Number(maxPower) < 0) {
+      toast.error("Please enter a valid Socket ID and a non-negative Max Power value.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await setMaxPower(socketId, maxPower);
+      toast.success(`Max power for socket ${socketId} set to ${maxPower}W.`);
+      // Clear form on success
+      setMaxPower("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error setting max power: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Set Socket Max Power</CardTitle>
+        <CardDescription>
+          Set a maximum power limit (in Watts) for a specific socket.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleMaxPowerSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="max-power-id"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Socket ID
+            </label>
+            <input
+              type="text"
+              id="max-power-id"
+              value={socketId}
+              onChange={(e) => setSocketId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., 6936b1004cdfcc09e6933449"
+              required
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="max-power-value"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Max Power (Watts)
+            </label>
+            <input
+              type="number"
+              id="max-power-value"
+              value={maxPower}
+              onChange={(e) => setMaxPower(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., 2500"
+              required
+            />
+          </div>
+
+          <div className="pt-4">
+            <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
+              {loading ? "Setting..." : "Set Max Power"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
+
+
+// --- The Main UpdateSocketInfo Component ---
 const UpdateSocketInfo = ({ initialData }) => {
-  // The form state includes an 'id' field that the user will fill in.
   const [socketForm, setSocketForm] = useState({
     id: "",
     name: "",
@@ -47,8 +152,6 @@ const UpdateSocketInfo = ({ initialData }) => {
 
   const [loading, setLoading] = useState(false);
 
-  // This effect runs when the component mounts or when `initialData` changes.
-  // It populates the form with the existing data, but NOT the ID.
   useEffect(() => {
     if (initialData) {
       setSocketForm((prev) => ({
@@ -68,7 +171,6 @@ const UpdateSocketInfo = ({ initialData }) => {
   const handleSocketSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate all fields, including the ID
     if (
       !socketForm.id ||
       !socketForm.name ||
@@ -81,10 +183,7 @@ const UpdateSocketInfo = ({ initialData }) => {
 
     setLoading(true);
     try {
-      // Destructure the ID from the rest of the form data
       const { id, ...dataToUpdate } = socketForm;
-
-      // Call the local API request function
       const response = await updateSocketData(id, dataToUpdate);
 
       if (!response.success) {
@@ -93,13 +192,11 @@ const UpdateSocketInfo = ({ initialData }) => {
       }
 
       toast.success("Socket updated successfully!");
-      setLoading(false);
-      // You might want to add a callback here to notify the parent component
-      // e.g., onSuccessfulUpdate();
     } catch (err) {
       console.error(err);
-      setLoading(false);
       toast.error("Error updating socket: " + err.message);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -113,6 +210,7 @@ const UpdateSocketInfo = ({ initialData }) => {
           </p>
         </div>
 
+        {/* --- First Card: Update Socket Details --- */}
         <Card>
           <CardHeader>
             <CardTitle>Socket Details</CardTitle>
@@ -122,7 +220,6 @@ const UpdateSocketInfo = ({ initialData }) => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSocketSubmit} className="space-y-4">
-              {/* --- Editable ID Input --- */}
               <div>
                 <label
                   htmlFor="id"
@@ -202,15 +299,17 @@ const UpdateSocketInfo = ({ initialData }) => {
               </div>
 
               <div className="pt-4">
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={loading}>
                   {loading ? "Updating..." : "Update Socket"}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
+
+        {/* --- Second Card: Set Max Power --- */}
+        <SetMaxPowerForm />
       </div>
-      <setMaxPowerForm/>
     </div>
   );
 };
