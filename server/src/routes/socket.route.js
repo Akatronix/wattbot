@@ -19,7 +19,7 @@ router.post("/create", verifyToken, verifyUser, createSocket);
 router.get("/getData", verifyToken, verifyUser, getSockets);
 router.put("/:id", verifyToken, verifyUser, updateSocket);
 router.post("/updateData", verifyToken, verifyUser, updateSocketInfo);
-router.post("setPower/:id", setMaxPower);
+router.post("/setPower/:id", setMaxPower);
 router.put("/hardware/:id", updateSocketHardware);
 router.delete("/:id", verifyToken, verifyUser, deleteSocket);
 
