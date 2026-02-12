@@ -289,6 +289,44 @@ async function updateSocketHardware(req, res) {
 }
 
 
+const setMaxPower = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { maxPower } = req.body;
+
+    if (maxPower === undefined || maxPower === null) {
+      return res.status(400).json({ message: "maxPower is required in the request body." });
+    }
+
+    if (typeof maxPower !== 'number' || isNaN(maxPower) || maxPower < 0) {
+      return res.status(400).json({ message: "maxPower must be a valid, non-negative number." });
+    }
+
+    const updatedSocket = await Socket.findByIdAndUpdate(
+      id,
+      { maxPower: maxPower },
+      { new: true, runValidators: true }
+    );
+
+
+    if (!updatedSocket) {
+      return res.status(404).json({ message: "Socket not found." });
+    }
+    
+    res.status(200).json({
+      message: "Max power updated successfully.",
+      socket: updatedSocket,
+    });
+
+  } catch (error) {
+    console.error("Error setting max power:", error);
+    if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: "Validation Error", error: error.message });
+    }
+
+    res.status(500).json({ message: "An internal server error occurred." });
+  }
+};
 
 
 module.exports = {
@@ -297,5 +335,6 @@ module.exports = {
   updateSocket,
   deleteSocket,
   updateSocketHardware,
-  updateSocketInfo
+  updateSocketInfo,
+  setMaxPower
 };
