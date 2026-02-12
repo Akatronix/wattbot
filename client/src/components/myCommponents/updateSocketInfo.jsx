@@ -36,7 +36,7 @@ const setMaxPower = async (id, maxPowerValue) => {
   const API_URL = `https://wattbot-server.vercel.app/api/sockets/setPower/${id}`;
 
   const response = await fetch(API_URL, {
-    method: "PUT", // Corrected from PATCH to PUT
+    method: "POST", // Corrected from PATCH to PUT
     headers: {
       "Content-Type": "application/json",
       token: localStorage.getItem("token"),
@@ -105,7 +105,7 @@ const SetMaxPowerForm = () => {
               value={socketId}
               onChange={(e) => setSocketId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., 6936b1004cdfcc09e6933449"
+              placeholder="Socket id"
               required
             />
           </div>
