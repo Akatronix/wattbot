@@ -31,17 +31,19 @@ const updateSocketData = async (id, dataToUpdate) => {
 };
 
 // --- Local API Request Helper for Setting Max Power ---
-// --- CHANGE: Updated to use PUT method as requested ---
-const setMaxPower = async (id, maxPowerValue) => {
-  const API_URL = `https://wattbot-server.vercel.app/api/sockets/setPower/${id}`;
+const setMaxPowerAPI = async (id, maxPowerValue) => {
+  // Use the host from env file as requested
+  const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/sockets/setPower/${id}`;
 
   const response = await fetch(API_URL, {
-    method: "POST", // Corrected from PATCH to PUT
+    method: "POST", // Method set to POST
     headers: {
       "Content-Type": "application/json",
-      token: localStorage.getItem("token"),
+      "token": localStorage.getItem("token"), // Token from local storage
     },
-    body: JSON.stringify({ maxPower: Number(maxPowerValue) }),
+    body: JSON.stringify({ 
+        maxPower: Number(maxPowerValue) 
+    }),
   });
 
   if (!response.ok) {
@@ -52,27 +54,28 @@ const setMaxPower = async (id, maxPowerValue) => {
   return response.json();
 };
 
-
-// --- The New SetMaxPowerForm Component ---
+// --- The SetMaxPowerForm Component ---
 const SetMaxPowerForm = () => {
   const [socketId, setSocketId] = useState("");
-  const [maxPower, setMaxPower] = useState("");
+  const [maxPowerInput, setMaxPowerInput] = useState(""); // Renamed to avoid conflict with API function
   const [loading, setLoading] = useState(false);
 
   const handleMaxPowerSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!socketId || !maxPower || isNaN(maxPower) || Number(maxPower) < 0) {
+    if (!socketId || !maxPowerInput || isNaN(maxPowerInput) || Number(maxPowerInput) < 0) {
       toast.error("Please enter a valid Socket ID and a non-negative Max Power value.");
       setLoading(false);
       return;
     }
 
     try {
-      await setMaxPower(socketId, maxPower);
-      toast.success(`Max power for socket ${socketId} set to ${maxPower}W.`);
-      setMaxPower("");
+      // Calling the API helper
+      await setMaxPowerAPI(socketId, maxPowerInput);
+      toast.success(`Max power for socket ${socketId} set to ${maxPowerInput}W.`);
+      setMaxPowerInput("");
+      setSocketId("");
     } catch (err) {
       console.error(err);
       toast.error("Error setting max power: " + err.message);
@@ -92,45 +95,37 @@ const SetMaxPowerForm = () => {
       <CardContent>
         <form onSubmit={handleMaxPowerSubmit} className="space-y-4">
           <div>
-            <label
-              htmlFor="max-power-id"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="max-power-id" className="block text-sm font-medium text-gray-700 mb-1">
               Socket ID
             </label>
-            {/* This input is correctly type="text" */}
             <input
               type="text"
               id="max-power-id"
               value={socketId}
               onChange={(e) => setSocketId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Socket id"
+              placeholder="Enter Socket ID (e.g., 6936...)"
               required
             />
           </div>
 
           <div>
-            <label
-              htmlFor="max-power-value"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="max-power-value" className="block text-sm font-medium text-gray-700 mb-1">
               Max Power (Watts)
             </label>
-            {/* This input is correctly type="number" */}
             <input
               type="number"
               id="max-power-value"
-              value={maxPower}
-              onChange={(e) => setMaxPower(e.target.value)}
+              value={maxPowerInput}
+              onChange={(e) => setMaxPowerInput(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., 2500"
+              placeholder="e.g., 230"
               required
             />
           </div>
 
           <div className="pt-4">
-            <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700">
+            <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700 w-full">
               {loading ? "Setting..." : "Set Max Power"}
             </Button>
           </div>
@@ -139,7 +134,6 @@ const SetMaxPowerForm = () => {
     </Card>
   );
 };
-
 
 // --- The Main UpdateSocketInfo Component ---
 const UpdateSocketInfo = ({ initialData }) => {
@@ -171,12 +165,7 @@ const UpdateSocketInfo = ({ initialData }) => {
   const handleSocketSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !socketForm.id ||
-      !socketForm.name ||
-      !socketForm.location ||
-      !socketForm.type
-    ) {
+    if (!socketForm.id || !socketForm.name || !socketForm.location || !socketForm.type) {
       toast.error("Please fill in all fields, including the Socket ID.");
       return;
     }
@@ -188,7 +177,7 @@ const UpdateSocketInfo = ({ initialData }) => {
 
       if (!response.success) {
         toast.error(response.message || "Failed to update socket");
-        throw new Error("Failed to update socket");
+        return;
       }
 
       toast.success("Socket updated successfully!");
@@ -196,12 +185,12 @@ const UpdateSocketInfo = ({ initialData }) => {
       console.error(err);
       toast.error("Error updating socket: " + err.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div>
+    <div className="max-w-4xl mx-auto p-4">
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Update Socket</h1>
@@ -220,13 +209,9 @@ const UpdateSocketInfo = ({ initialData }) => {
           <CardContent>
             <form onSubmit={handleSocketSubmit} className="space-y-4">
               <div>
-                <label
-                  htmlFor="id"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="id" className="block text-sm font-medium text-gray-700 mb-1">
                   Socket ID
                 </label>
-                {/* --- IMPORTANT: This input MUST be type="text" --- */}
                 <input
                   type="text"
                   id="id"
@@ -239,10 +224,7 @@ const UpdateSocketInfo = ({ initialData }) => {
               </div>
 
               <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   Socket Name
                 </label>
                 <input
@@ -257,10 +239,7 @@ const UpdateSocketInfo = ({ initialData }) => {
               </div>
 
               <div>
-                <label
-                  htmlFor="location"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                   Location
                 </label>
                 <input
@@ -275,10 +254,7 @@ const UpdateSocketInfo = ({ initialData }) => {
               </div>
 
               <div>
-                <label
-                  htmlFor="type"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
                   Device Type
                 </label>
                 <select
