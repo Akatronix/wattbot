@@ -14,6 +14,7 @@
 //   Lightbulb,
 //   Droplets,
 //   Wifi,
+//   AlertTriangle, // Added for the warning icon
 // } from "lucide-react";
 // import useUserStore from "@/store/UserStore";
 // import { useSocketStore } from "@/store/socketStore";
@@ -44,12 +45,36 @@
 //     }
 //   };
 
-//   // Format power value (0-100) to display string
+//   // --- NEW: Power Badge Logic ---
+//   const getPowerBadge = (currentPower, maxPower) => {
+//     if (!maxPower || maxPower === 0) return null;
+
+//     const isExceeded = currentPower >= maxPower;
+//     const isWarning = currentPower >= maxPower * 0.9; // Warning at 90% capacity
+
+//     if (isExceeded) {
+//       return (
+//         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 animate-pulse border border-red-200">
+//           <AlertTriangle className="h-3 w-3" /> OVER LIMIT
+//         </span>
+//       );
+//     }
+
+//     if (isWarning) {
+//       return (
+//         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+//           <AlertTriangle className="h-3 w-3" /> WARNING
+//         </span>
+//       );
+//     }
+
+//     return null;
+//   };
+
 //   const formatPower = (power) => {
 //     return `${power} KW`;
 //   };
 
-//   // Get unique locations
 //   const locations = [...new Set(userData.map((device) => device.location))];
 
 //   return (
@@ -62,15 +87,11 @@
 //           </p>
 //         </div>
 //         <div>
-//           {/* show loading and error */}
-
 //           {loading && <p className="text-blue-600">Loading...</p>}
 //           {error && <p className="text-red-600">Error: {error}</p>}
-//           {/* check if not userData */}
 //         </div>
 //       </div>
 
-//       {/* Room-wise Device Groups */}
 //       <div className="space-y-6">
 //         {locations.map((room) => {
 //           const roomDevices = userData.filter(
@@ -117,9 +138,13 @@
 //                             </div>
 //                             <div>
 //                               <h3 className="font-medium">{device.name}</h3>
-//                               <p className="text-sm text-gray-500">
-//                                 {formatPower(device.power)}
-//                               </p>
+//                               <div className="flex items-center gap-2">
+//                                 <p className="text-sm text-gray-500">
+//                                   {formatPower(device.power)}
+//                                 </p>
+//                                 {/* Badge added here */}
+//                                 {getPowerBadge(device.power, device.maxPower)}
+//                               </div>
 //                               <p className="text-sm text-gray-500">
 //                                 ID: {device._id}
 //                               </p>
@@ -178,7 +203,6 @@
 //         })}
 //       </div>
 
-//       {/* All Devices Grid */}
 //       <Card>
 //         <CardHeader>
 //           <CardTitle>All Devices</CardTitle>
@@ -218,8 +242,7 @@
 //                       <div>
 //                         <h3 className="font-medium">{device.name}</h3>
 //                         <p className="text-sm text-gray-500 flex gap-0.5 items-start justify-start">
-//                           Location:{" "}
-//                           {device.location}
+//                           Location: {device.location}
 //                         </p>
 //                         <p className="text-sm text-gray-500">
 //                           ID: {device._id}
@@ -253,9 +276,15 @@
 //                       </p>
 //                     </div>
 //                     <div>
-//                       <p className="text-sm text-gray-500">
-//                         Power: {formatPower(device.power)}
-//                       </p>
+//                       <div className="flex flex-col">
+//                         <p className="text-sm text-gray-500">
+//                           Power: {formatPower(device.power)}
+//                         </p>
+//                         {/* Badge added here for detailed view */}
+//                         <div className="mt-1">
+//                           {getPowerBadge(device.power, device.maxPower)}
+//                         </div>
+//                       </div>
 //                       <p className="text-sm text-gray-500">
 //                         Energy: {device.energy} kWh
 //                       </p>
@@ -286,7 +315,6 @@
 //         </CardContent>
 //       </Card>
 
-//       {/* Quick Actions */}
 //       <Card>
 //         <CardHeader>
 //           <CardTitle>Quick Actions</CardTitle>
@@ -376,7 +404,8 @@
 
 
 
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -392,17 +421,59 @@ import {
   Lightbulb,
   Droplets,
   Wifi,
-  AlertTriangle, // Added for the warning icon
+  AlertTriangle,
 } from "lucide-react";
 import useUserStore from "@/store/UserStore";
 import { useSocketStore } from "@/store/socketStore";
 import DeleteSockect from "./DeleteSockect";
+import { toast } from "sonner"; // Only import the toast function
 
 const ControlDevices = () => {
   const { userData } = useUserStore();
   const { updateDeviceStatus } = useSocketStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [notifiedSockets, setNotifiedSockets] = useState(new Set()); // Track notified sockets to prevent spam
+
+  // Check for sockets that exceed their limit and show toast
+  useEffect(() => {
+    userData.forEach((device) => {
+      const isExceeding = device.maxPower && device.maxPower > 0 && device.power >= device.maxPower;
+      const wasNotified = notifiedSockets.has(device._id);
+
+      if (isExceeding && !wasNotified) {
+        // Show toast for new exceeded limit
+        toast.error(
+          <div className="flex items-start">
+            <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0 text-red-500" />
+            <div>
+              <p className="font-semibold">{device.name} has exceeded its limit</p>
+              <div className="text-xs mt-1 space-y-0.5">
+                <p>Normal Power (Limit): <span className="font-medium">{device.maxPower} kW</span></p>
+                <p>Currently Consuming: <span className="font-medium">{device.power} kW</span></p>
+              </div>
+            </div>
+          </div>,
+          {
+            id: `limit-exceeded-${device._id}`, // Use a unique ID to prevent duplicates
+            duration: Infinity, // Keep it visible until the user dismisses it or the issue is resolved
+            position: 'bottom-right',
+          }
+        );
+        
+        // Add to notified set
+        setNotifiedSockets(prev => new Set(prev).add(device._id));
+      } else if (!isExceeding && wasNotified) {
+        // If the socket is no longer exceeding the limit, dismiss the toast and remove from the set
+        toast.dismiss(`limit-exceeded-${device._id}`);
+        setNotifiedSockets(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(device._id);
+          return newSet;
+        });
+      }
+    });
+  }, [userData, notifiedSockets]);
 
   const toggleDeviceStatus = (deviceId, switchStatus) => {
     updateDeviceStatus({ id: deviceId, status: !switchStatus });
@@ -423,7 +494,7 @@ const ControlDevices = () => {
     }
   };
 
-  // --- NEW: Power Badge Logic ---
+  // --- Power Badge Logic ---
   const getPowerBadge = (currentPower, maxPower) => {
     if (!maxPower || maxPower === 0) return null;
 
